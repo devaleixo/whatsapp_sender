@@ -1,0 +1,35 @@
+services:
+  evolution-api:
+    image: atendai/evolution-api:latest
+    container_name: evolution_api
+    restart: always
+    ports:
+      - "8080:8080"
+    volumes:
+      - evolution_data:/evolution/instances
+    environment:
+      # Configurações básicas
+      - SERVER_URL=http://localhost:8080
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=whatsapp_sender_secret_key_2024
+      - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
+      
+      # Logs
+      - LOG_LEVEL=ERROR
+      - LOG_COLOR=true
+      
+      # Webhook (opcional - para receber mensagens)
+      - WEBHOOK_GLOBAL_ENABLED=false
+      
+      # QR Code
+      - QRCODE_LIMIT=6
+      - QRCODE_COLOR=#000000
+      
+      # Instâncias
+      - DEL_INSTANCE=false
+      - CONFIG_SESSION_PHONE_CLIENT=Evolution API
+      - CONFIG_SESSION_PHONE_NAME=Chrome
+
+volumes:
+  evolution_data:
+    driver: local
