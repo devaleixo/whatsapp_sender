@@ -54,35 +54,94 @@ class WhatsAppSender:
         if not instance_exists:
             print(f"   Criando instância '{self.instance_name}'...")
             result = self.api.create_instance(self.instance_name)
+            # Ignora erro se a instância já existe
             if result.get("error"):
-                print(f"   ❌ Erro ao criar instância: {result.get('message')}")
-                return False
-            print("   ✓ Instância criada!")
+                error_msg = str(result.get("message", ""))
+                if "already in use" in error_msg or "already exists" in error_msg:
+                    print(f"   ✓ Instância '{self.instance_name}' já existe!")
+                    instance_exists = True
+                else:
+                    print(f"   ❌ Erro ao criar instância: {error_msg}")
+                    return False
+            else:
+                print("   ✓ Instância criada!")
         
         # Verifica se está conectado
         if self.api.is_connected(self.instance_name):
             print("   ✓ WhatsApp já está conectado!")
             return True
         
-        # Obtém QR Code
-        print("\n📱 Escaneie o QR Code com seu WhatsApp:")
-        qr = self.api.get_qrcode(self.instance_name)
+        # Obtém QR Code (com retry, pois pode demorar para gerar)
+        print("\n📱 Obtendo QR Code...")
+        qr = None
+        qr_displayed = False
         
-        if qr.get("base64"):
-            # Salva QR Code como imagem
+        for attempt in range(5):
+            qr = self.api.get_qrcode(self.instance_name)
+            if qr.get("code") or qr.get("base64"):
+                break
+            print(f"   Aguardando geração do QR... ({attempt + 1}/5)")
+            time.sleep(2)
+        
+        # Tenta exibir QR Code no terminal
+        if qr and qr.get("code"):
+            try:
+                import qrcode
+                qr_obj = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=1,
+                    border=1,
+                )
+                qr_obj.add_data(qr.get("code"))
+                qr_obj.make(fit=True)
+                print("\n" + "=" * 50)
+                qr_obj.print_ascii(invert=True)
+                print("=" * 50)
+                qr_displayed = True
+            except ImportError:
+                print("   ⚠️  Instale 'qrcode' para ver no terminal: pip install qrcode")
+        
+        # Salva QR Code como imagem
+        if qr and qr.get("base64"):
             import base64
+            import subprocess
             qr_data = qr.get("base64").split(",")[-1]
-            with open("qrcode.png", "wb") as f:
+            qr_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "qrcode.png")
+            with open(qr_path, "wb") as f:
                 f.write(base64.b64decode(qr_data))
-            print("   💾 QR Code salvo em: qrcode.png")
-            print("   📲 Abra a imagem e escaneie com WhatsApp > Aparelhos Conectados")
+            print(f"\n   💾 QR Code salvo em: {qr_path}")
+            
+            # Tenta abrir a imagem automaticamente
+            try:
+                if sys.platform == "linux":
+                    subprocess.Popen(["xdg-open", qr_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                elif sys.platform == "darwin":
+                    subprocess.Popen(["open", qr_path], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                elif sys.platform == "win32":
+                    os.startfile(qr_path)
+                print("   📲 Imagem aberta - escaneie com WhatsApp > Aparelhos Conectados")
+            except Exception:
+                print("   📲 Abra a imagem manualmente e escaneie com WhatsApp")
         
-        if qr.get("code"):
-            print(f"\n   Código: {qr.get('code')[:60]}...")
+        # Se não conseguiu QR Code, abre o Manager Web
+        if not qr_displayed and not (qr and qr.get("base64")):
+            import subprocess
+            import webbrowser
+            manager_url = "http://localhost:8080/manager"
+            print(f"\n   ⚠️  QR Code não disponível via API")
+            print(f"\n   🌐 Abrindo Manager Web: {manager_url}")
+            print(f"   🔑 API Key: whatsapp_sender_secret_key_2024")
+            print(f"   📱 Clique na instância '{self.instance_name}' e escaneie o QR")
+            try:
+                webbrowser.open(manager_url)
+            except Exception:
+                pass
         
         # Aguarda conexão
-        print("\n⏳ Aguardando conexão (2 minutos)...")
-        if self.api.wait_for_connection(self.instance_name, timeout=120):
+        print("\n⏳ Aguardando conexão (3 minutos)...")
+        print("   Escaneie o QR Code com WhatsApp > Aparelhos Conectados")
+        if self.api.wait_for_connection(self.instance_name, timeout=180):
             print("   ✓ WhatsApp conectado com sucesso!")
             return True
         else:
@@ -264,10 +323,16 @@ _Mensagem enviada via sistema automatizado_"""
     print(sender.format_message(message_template, sample_contact))
     print("-" * 40)
     
-    confirm = input("\n⚠️  Deseja continuar? (s/N): ").strip().lower()
-    if confirm != 's':
-        print("Operação cancelada.")
-        sys.exit(0)
+    # Verifica flag -y para pular confirmação
+    skip_confirm = "-y" in sys.argv or "--yes" in sys.argv
+    
+    if not skip_confirm:
+        confirm = input("\n⚠️  Deseja continuar? (s/N): ").strip().lower()
+        if confirm != 's':
+            print("Operação cancelada.")
+            sys.exit(0)
+    else:
+        print("\n⚡ Confirmação pulada (-y). Iniciando envio...")
     
     # Envia mensagens
     sender.send_messages(contacts, message_template, delay_seconds=5.0, verify_whatsapp=True)

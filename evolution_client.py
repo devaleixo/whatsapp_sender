@@ -90,7 +90,9 @@ class EvolutionAPI:
         """
         data = {
             "number": self._format_phone(phone),
-            "text": message
+            "textMessage": {
+                "text": message
+            }
         }
         return self._request("POST", f"/message/sendText/{instance_name}", data)
     
