@@ -217,9 +217,9 @@ class WhatsAppSender:
                     self.skipped_count += 1
                     continue
             
-            # Formata e envia mensagem
+            # Formata e envia mensagem (com indicador de "digitando...")
             message = self.format_message(message_template, contact)
-            result = self.api.send_text(self.instance_name, contact.telefone, message)
+            result = self.api.send_text_with_typing(self.instance_name, contact.telefone, message, typing_delay=5.0)
             
             if result.get("error"):
                 print(f"   ❌ Erro: {result.get('message', 'Desconhecido')[:50]}")

@@ -1,0 +1,25 @@
+# =============================================================================
+# CRON - WhatsApp Marketing Automático
+# =============================================================================
+# Envia 20 mensagens por dia (limite diário) para todas as campanhas
+# Sempre usa a mensagem de apresentação (01_apresentacao.txt)
+# =============================================================================
+
+# Para ativar:
+# 1. Execute: crontab -e
+# 2. Cole a linha abaixo (sem o #)
+# 3. Salve e saia
+
+# === ENVIO DIÁRIO ÀS 11:50 (horário de Brasília) ===
+50 11 * * * cd /home/devaleixo/code/whatsapp_sender && ./marketing_auto.sh --todas --limite-global 20
+
+# === COMANDOS ÚTEIS ===
+# Ver logs do dia:
+#   tail -f ~/code/whatsapp_sender/logs/auto_$(date +%Y-%m-%d).log
+#
+# Verificar cron ativo:
+#   crontab -l
+#
+# Testar manualmente:
+#   cd ~/code/whatsapp_sender && ./marketing_auto.sh --todas --limite-global 20
+

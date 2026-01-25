@@ -79,6 +79,49 @@ class EvolutionAPI:
     
     # ==================== Mensagens ====================
     
+    def send_presence(self, instance_name: str, phone: str, presence: str = "composing", delay: float = 2.0) -> dict:
+        """
+        Envia indicador de presença (digitando, gravando áudio, etc)
+        
+        Args:
+            instance_name: Nome da instância
+            phone: Número do telefone
+            presence: Tipo de presença:
+                - 'composing' = digitando...
+                - 'recording' = gravando áudio...
+                - 'paused' = parou de digitar
+            delay: Tempo em segundos para manter o status
+        
+        Returns:
+            Resposta da API
+        """
+        data = {
+            "number": self._format_phone(phone),
+            "presence": presence,
+            "delay": int(delay * 1000)  # API espera em milissegundos
+        }
+        return self._request("POST", f"/chat/sendPresence/{instance_name}", data)
+    
+    def send_text_with_typing(self, instance_name: str, phone: str, message: str, typing_delay: float = 3.0) -> dict:
+        """
+        Envia mensagem de texto com indicador de 'digitando...' antes
+        Parece mais natural/humano
+        
+        Args:
+            instance_name: Nome da instância
+            phone: Número do telefone
+            message: Texto da mensagem
+            typing_delay: Tempo mostrando 'digitando...' antes de enviar (segundos)
+        """
+        # Mostra "digitando..."
+        self.send_presence(instance_name, phone, "composing", typing_delay)
+        
+        # Aguarda um pouco para parecer natural
+        time.sleep(typing_delay)
+        
+        # Envia a mensagem
+        return self.send_text(instance_name, phone, message)
+    
     def send_text(self, instance_name: str, phone: str, message: str) -> dict:
         """
         Envia uma mensagem de texto
