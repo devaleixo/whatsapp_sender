@@ -507,7 +507,7 @@ for row in ws.iter_rows(min_row=2, values_only=True):
             with open(f"{campanha_dir}/enviados.log", 'a') as log:
                 log.write(f"{str(telefone).strip()}|{timestamp}|{new_msg_num}\n")
         
-        time.sleep(8)
+        time.sleep(60)
         
     except Exception as e:
         print(f"     ❌ Erro: {str(e)[:50]}")

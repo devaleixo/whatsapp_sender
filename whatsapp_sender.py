@@ -406,7 +406,7 @@ _Mensagem enviada via sistema automatizado_"""
         print("\n⚡ Confirmação pulada (-y). Iniciando envio...")
     
     # Envia mensagens
-    sender.send_messages(contacts, message_template, delay_seconds=5.0, verify_whatsapp=True)
+    sender.send_messages(contacts, message_template, delay_seconds=60.0, verify_whatsapp=True)
 
 
 if __name__ == "__main__":
