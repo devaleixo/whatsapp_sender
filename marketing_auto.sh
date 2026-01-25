@@ -225,30 +225,34 @@ EOF
 }
 
 # =============================================================================
-# ENVIO PARA TODAS AS CAMPANHAS (com limite global)
+# ENVIO PARA TODAS AS CAMPANHAS (10 follow-up + 10 apresentação)
 # =============================================================================
 
 enviar_todas_campanhas_global() {
-    local limite_global="${1:-20}"
-    local mensagem_nome="01_apresentacao.txt"
+    local limite_total="${1:-20}"
+    local limite_followup=$((limite_total / 2))  # 50% follow-up
+    local limite_novos=$((limite_total - limite_followup))  # 50% novos
     
     log "=========================================="
-    log "🚀 Iniciando envio automático"
-    log "   Limite global: $limite_global mensagens"
+    log "🚀 Iniciando envio automático diário"
+    log "   Total: $limite_total mensagens"
+    log "   → Follow-up (48h): até $limite_followup"
+    log "   → Apresentação: até $limite_novos"
     log "=========================================="
     
-    # Coleta TODOS os contatos pendentes de TODAS as campanhas
-    local batch_global="$SCRIPT_DIR/batch_global.xlsx"
+    local batch_global="$SCRIPT_DIR/batch_diario.xlsx"
     
     python3 << EOF
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import Font, PatternFill
+from datetime import datetime, timedelta
 import os
 import glob
 
 campanhas_dir = '$CAMPANHAS_DIR'
 blocklist_file = '$BLOCKLIST_FILE'
-limite = $limite_global
+limite_followup = $limite_followup
+limite_novos = $limite_novos
 
 # Carrega blocklist global
 blocklist = set()
@@ -264,8 +268,7 @@ except FileNotFoundError:
 
 # Plataformas genéricas
 GENERIC_PLATFORMS = [
-    'instagram.com', 'facebook.com', 'fb.com', 'fb.me',
-    'wix.com', 'wixsite.com', 'weebly.com', 'squarespace.com',
+    'instagram.com', 'facebook.com', 'wix.com', 'wixsite.com',
     'wordpress.com', 'blogspot.com', 'sites.google.com', 'g.page',
     'carrd.co', 'linktree', 'linktr.ee', 'wa.me',
 ]
@@ -279,27 +282,40 @@ def needs_professional_site(website):
             return True
     return False
 
-# Coleta todos os contatos pendentes
-todos_pendentes = []
+# Coleta contatos de todas as campanhas
+contatos_followup = []  # Elegíveis para follow-up (48h+)
+contatos_novos = []      # Nunca enviados
 
 for tipo_dir in glob.glob(f"{campanhas_dir}/*/"):
     for cidade_dir in glob.glob(f"{tipo_dir}/*/"):
         contatos_xlsx = f"{cidade_dir}/contatos.xlsx"
         enviados_log = f"{cidade_dir}/enviados.log"
-        mensagem_file = f"{cidade_dir}/mensagens/$mensagem_nome"
+        mensagem_apresentacao = f"{cidade_dir}/mensagens/01_apresentacao.txt"
+        mensagem_followup = f"{cidade_dir}/mensagens/followup_48h.txt"
         
-        if not os.path.exists(contatos_xlsx) or not os.path.exists(mensagem_file):
+        if not os.path.exists(contatos_xlsx):
             continue
         
-        # Carrega enviados desta campanha
-        enviados = set()
+        # Carrega log de enviados com timestamps
+        enviados_info = {}  # telefone -> (timestamp, msg_num)
+        enviados_set = set()
         try:
             with open(enviados_log, 'r') as f:
                 for line in f:
-                    line = line.strip()
-                    if line:
-                        telefone = line.split('|')[0]
-                        enviados.add(telefone)
+                    parts = line.strip().split('|')
+                    if len(parts) >= 3:
+                        telefone = parts[0]
+                        timestamp_str = parts[1]
+                        msg_num = int(parts[2])
+                        enviados_set.add(telefone)
+                        try:
+                            sent_time = datetime.fromisoformat(timestamp_str)
+                            hours_ago = (datetime.now() - sent_time).total_seconds() / 3600
+                            enviados_info[telefone] = (sent_time, msg_num, hours_ago)
+                        except:
+                            pass
+                    elif len(parts) == 1:
+                        enviados_set.add(parts[0])
         except FileNotFoundError:
             pass
         
@@ -313,33 +329,72 @@ for tipo_dir in glob.glob(f"{campanhas_dir}/*/"):
                 telefone = row[1] if len(row) > 1 else None
                 website = row[4] if len(row) > 4 else None
                 
-                if nome and telefone and str(telefone) != 'N/A':
-                    telefone_str = str(telefone).strip()
-                    if (telefone_str not in enviados and 
-                        telefone_str not in blocklist and 
-                        needs_professional_site(website)):
-                        # Guarda contato com info da campanha
-                        todos_pendentes.append({
+                if not nome or not telefone or str(telefone) == 'N/A':
+                    continue
+                
+                telefone_str = str(telefone).strip()
+                
+                # Ignora blocklist
+                if telefone_str in blocklist:
+                    continue
+                
+                # Ignora sem site profissional
+                if not needs_professional_site(website):
+                    continue
+                
+                # Verifica se é follow-up ou novo
+                if telefone_str in enviados_info:
+                    sent_time, msg_num, hours_ago = enviados_info[telefone_str]
+                    # Elegível para follow-up: 48h+ e menos de 3 mensagens
+                    if hours_ago >= 48 and msg_num < 3:
+                        # Usa mensagem de follow-up se existir
+                        msg_file = mensagem_followup if os.path.exists(mensagem_followup) else mensagem_apresentacao
+                        contatos_followup.append({
                             'row': row,
                             'campanha_dir': cidade_dir,
-                            'mensagem_file': mensagem_file
+                            'mensagem_file': msg_file,
+                            'tipo': 'followup',
+                            'msg_anterior': msg_num
                         })
-        except:
-            pass
+                elif telefone_str not in enviados_set:
+                    # Contato novo
+                    if os.path.exists(mensagem_apresentacao):
+                        contatos_novos.append({
+                            'row': row,
+                            'campanha_dir': cidade_dir,
+                            'mensagem_file': mensagem_apresentacao,
+                            'tipo': 'novo',
+                            'msg_anterior': 0
+                        })
+        except Exception as e:
+            print(f"Erro ao carregar {contatos_xlsx}: {e}")
 
-# Pega os primeiros N do total
-batch = todos_pendentes[:limite]
+# Seleciona batch balanceado
+batch_followup = contatos_followup[:limite_followup]
+batch_novos = contatos_novos[:limite_novos]
+
+# Se não tiver follow-up suficiente, completa com novos
+if len(batch_followup) < limite_followup:
+    extra = limite_followup - len(batch_followup)
+    batch_novos = contatos_novos[:limite_novos + extra]
+
+# Se não tiver novos suficiente, completa com follow-up
+if len(batch_novos) < limite_novos:
+    extra = limite_novos - len(batch_novos)
+    batch_followup = contatos_followup[:limite_followup + extra]
+
+batch = batch_followup + batch_novos
 
 if not batch:
-    print("EMPTY:0")
+    print("EMPTY:0:0")
     exit(0)
 
-# Cria XLSX global com todos os contatos
+# Cria XLSX
 wb_batch = Workbook()
 ws_batch = wb_batch.active
 ws_batch.title = "Batch"
 
-headers = ["Nome", "Telefone", "Endereço", "Avaliação", "Website", "Campanha", "Mensagem"]
+headers = ["Nome", "Telefone", "Endereço", "Avaliação", "Website", "Campanha", "Mensagem", "Tipo", "MsgAnterior"]
 header_font = Font(bold=True, color="FFFFFF")
 header_fill = PatternFill(start_color="27AE60", end_color="27AE60", fill_type="solid")
 
@@ -354,55 +409,62 @@ for row_idx, item in enumerate(batch, 2):
         ws_batch.cell(row=row_idx, column=col_idx, value=value)
     ws_batch.cell(row=row_idx, column=6, value=item['campanha_dir'])
     ws_batch.cell(row=row_idx, column=7, value=item['mensagem_file'])
-
-ws_batch.column_dimensions['A'].width = 35
-ws_batch.column_dimensions['B'].width = 16
-ws_batch.column_dimensions['F'].width = 40
-ws_batch.column_dimensions['G'].width = 50
+    ws_batch.cell(row=row_idx, column=8, value=item['tipo'])
+    ws_batch.cell(row=row_idx, column=9, value=item['msg_anterior'])
 
 wb_batch.save('$batch_global')
-print(f"OK:{len(batch)}")
+print(f"OK:{len(batch_followup)}:{len(batch_novos)}")
 EOF
     
-    local result=$(python3 -c "
+    local result=$(tail -1 "$LOG_FILE" 2>/dev/null | grep -o "OK:[0-9]*:[0-9]*" || echo "")
+    
+    if [[ -z "$result" ]]; then
+        result=$(python3 -c "
 from openpyxl import load_workbook
 try:
     wb = load_workbook('$batch_global')
     ws = wb.active
-    count = sum(1 for row in ws.iter_rows(min_row=2, values_only=True) if row[0])
-    print(f'OK:{count}')
+    followup = sum(1 for row in ws.iter_rows(min_row=2, values_only=True) if row[7] == 'followup')
+    novos = sum(1 for row in ws.iter_rows(min_row=2, values_only=True) if row[7] == 'novo')
+    print(f'OK:{followup}:{novos}')
 except:
-    print('EMPTY:0')
+    print('EMPTY:0:0')
 " 2>/dev/null)
+    fi
     
-    if [[ "$result" == "EMPTY:0" ]] || [[ -z "$result" ]]; then
+    if [[ "$result" == "EMPTY:0:0" ]] || [[ -z "$result" ]]; then
         log "⚠️ Nenhum contato pendente para enviar"
         rm -f "$batch_global"
         return 0
     fi
     
-    local batch_count=$(echo "$result" | cut -d: -f2)
-    log "✅ Total de $batch_count contatos selecionados de todas as campanhas"
+    local followup_count=$(echo "$result" | cut -d: -f2)
+    local novos_count=$(echo "$result" | cut -d: -f3)
+    local total_count=$((followup_count + novos_count))
     
-    # Envia cada contato individualmente (para usar a mensagem correta de cada campanha)
+    log ""
+    log "📊 Batch diário:"
+    log "   🔄 Follow-up (48h): $followup_count"
+    log "   🆕 Novos contatos: $novos_count"
+    log "   📱 Total: $total_count"
+    
+    # Envia mensagens
+    log ""
     log "📤 Iniciando envio..."
     
     python3 << EOF
 from openpyxl import load_workbook
 from datetime import datetime
-import subprocess
 import sys
 import time
 
 sys.path.insert(0, '$SCRIPT_DIR')
 from evolution_client import EvolutionAPI
-from whatsapp_sender import WhatsAppSender
 
 wb = load_workbook('$batch_global')
 ws = wb.active
 
 api = EvolutionAPI()
-sender = WhatsAppSender(api)
 
 sucesso = 0
 falha = 0
@@ -412,20 +474,24 @@ for row in ws.iter_rows(min_row=2, values_only=True):
     telefone = row[1] if len(row) > 1 else None
     campanha_dir = row[5] if len(row) > 5 else None
     mensagem_file = row[6] if len(row) > 6 else None
+    tipo = row[7] if len(row) > 7 else 'novo'
+    msg_anterior = row[8] if len(row) > 8 else 0
     
     if not telefone or not mensagem_file:
         continue
     
     try:
-        # Lê mensagem da campanha
+        # Lê mensagem
         with open(mensagem_file, 'r') as f:
             mensagem = f.read()
         
         # Substitui variáveis
         mensagem = mensagem.replace('{nome}', str(nome) if nome else 'empresa')
         
-        # Envia com digitando
-        print(f"  📱 Enviando para {telefone}...")
+        # Emoji de status
+        emoji = "🔄" if tipo == 'followup' else "🆕"
+        print(f"  {emoji} Enviando para {telefone}...")
+        
         result = api.send_text_with_typing('marketing_sender', str(telefone), mensagem, typing_delay=5.0)
         
         if result.get('error'):
@@ -437,10 +503,10 @@ for row in ws.iter_rows(min_row=2, values_only=True):
             
             # Atualiza log da campanha
             timestamp = datetime.now().isoformat()
+            new_msg_num = int(msg_anterior) + 1 if msg_anterior else 1
             with open(f"{campanha_dir}/enviados.log", 'a') as log:
-                log.write(f"{str(telefone).strip()}|{timestamp}|1\n")
+                log.write(f"{str(telefone).strip()}|{timestamp}|{new_msg_num}\n")
         
-        # Delay entre mensagens
         time.sleep(8)
         
     except Exception as e:
@@ -452,10 +518,9 @@ EOF
     
     log ""
     log "=========================================="
-    log "✅ Envio automático concluído!"
+    log "✅ Envio diário concluído!"
     log "=========================================="
     
-    # Remove batch temporário
     rm -f "$batch_global"
 }
 
@@ -470,13 +535,12 @@ show_usage() {
     echo "  --campanha <tipo/cidade>    Enviar para campanha específica"
     echo "  --mensagem <arquivo.txt>    Arquivo de mensagem (padrão: 01_apresentacao.txt)"
     echo "  --limite <N>                Máximo de contatos por campanha"
-    echo "  --limite-global <N>         Máximo TOTAL de contatos (distribuído entre campanhas)"
-    echo "  --todas                     Enviar para todas as campanhas (requer --limite ou --limite-global)"
+    echo "  --limite-global <N>         Limite TOTAL: 50% follow-up + 50% novos"
+    echo "  --todas                     Enviar para todas as campanhas"
     echo "  --help                      Mostrar esta ajuda"
     echo ""
     echo "Exemplos:"
-    echo "  $0 --todas --limite-global 20   # 20 no total de todas as campanhas"
-    echo "  $0 --todas --limite 5           # 5 por campanha"
+    echo "  $0 --todas --limite-global 20   # 10 follow-up + 10 novos"
     echo "  $0 --campanha corretor_imoveis/brasilia --limite 20"
 }
 

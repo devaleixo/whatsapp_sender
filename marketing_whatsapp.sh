@@ -756,6 +756,17 @@ Já ajudei várias empresas a economizar tempo e vender mais.
 Posso te mostrar como funciona?
 EOFMSG
 
+    # Mensagem 4: Follow-up (Auto cron)
+    cat > "$mensagens_dir/followup_48h.txt" << 'EOFMSG'
+Olá {nome}! 👋 Passando aqui só porque esqueci de comentar um detalhe...
+
+Além do sistema próprio, eu também configuro toda a parte de *automação de WhatsApp* para você não perder nenhum lead (como este aqui).
+
+O sistema responde na hora, qualifica o cliente e já agenda a visita. 🤖
+
+Se quiser, posso te mandar um vídeo de 1min mostrando isso funcionando na prática. O que acha?
+EOFMSG
+
     echo -e "${GREEN}✅ Mensagens de exemplo criadas${NC}"
 }
 

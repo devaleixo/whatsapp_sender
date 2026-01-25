@@ -167,15 +167,86 @@ class WhatsAppSender:
             
             # Só adiciona se tiver nome e telefone válido
             if nome and telefone and telefone != "N/A":
-                contacts.append(Contact(
-                    nome=nome,
-                    telefone=str(telefone),
-                    endereco=endereco,
-                    avaliacao=str(avaliacao) if avaliacao else None,
-                    website=website
-                ))
+                # Formata telefone para padrão internacional
+                formatted_phone = self.format_phone_international(str(telefone))
+                if formatted_phone:
+                    contacts.append(Contact(
+                        nome=nome,
+                        telefone=formatted_phone,
+                        endereco=endereco,
+                        avaliacao=str(avaliacao) if avaliacao else None,
+                        website=website
+                    ))
         
         return contacts
+    
+    def format_phone_international(self, phone: str) -> Optional[str]:
+        """
+        Formata telefone para padrão internacional do WhatsApp.
+        
+        Suporta:
+        - Brasil: +55, 55, ou formato local (11 999999999)
+        - EUA/Canadá: +1
+        - Portugal: +351
+        - UK: +44
+        - Argentina: +54
+        - México: +52
+        - E outros com código de país já incluso
+        
+        Returns:
+            Telefone formatado (ex: "5511999999999") ou None se inválido
+        """
+        if not phone:
+            return None
+        
+        # Remove tudo que não for número
+        digits = re.sub(r'\D', '', phone)
+        
+        if not digits or len(digits) < 8:
+            return None
+        
+        # Detecta padrão pelo tamanho e prefixo
+        
+        # Já tem código de país internacional (começa com um código válido)
+        # Lista de códigos de país comuns
+        country_codes = {
+            '1': 11,    # EUA/Canadá (1 + 10 dígitos)
+            '44': 12,   # UK
+            '49': 12,   # Alemanha
+            '33': 11,   # França
+            '34': 11,   # Espanha
+            '351': 12,  # Portugal
+            '39': 12,   # Itália
+            '52': 12,   # México
+            '54': 12,   # Argentina
+            '55': 12,   # Brasil (55 + 11 dígitos = 13 total)
+            '56': 11,   # Chile
+            '57': 12,   # Colômbia
+            '58': 12,   # Venezuela
+            '61': 11,   # Austrália
+            '81': 12,   # Japão
+            '86': 13,   # China
+            '91': 12,   # Índia
+            '971': 12,  # Emirados
+        }
+        
+        # Verifica se já tem código de país
+        for code, expected_len in country_codes.items():
+            if digits.startswith(code) and len(digits) >= expected_len:
+                return digits
+        
+        # Assume Brasil se não tiver código de país
+        # Números brasileiros: 10-11 dígitos (DDD + número)
+        if len(digits) >= 10 and len(digits) <= 11:
+            # Adiciona código do Brasil
+            return f"55{digits}"
+        
+        # Se for muito longo, assume que já está completo
+        if len(digits) >= 12:
+            return digits
+        
+        # Telefone muito curto, inválido
+        return None
     
     def format_message(self, template: str, contact: Contact) -> str:
         """Formata a mensagem com os dados do contato"""
