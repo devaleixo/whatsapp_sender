@@ -1,0 +1,13 @@
+Olá, {nome}! Tudo bem?
+
+Me chamo Gabriel Aleixo, sou Engenheiro de Software e ajudo imobiliárias a saírem da dependência total de portais como Zap e Viva Real, criando plataformas exclusivas com tecnologia de ponta.
+
+Desenvolvi um sistema estilo ZapImóveis/DFImóveis que é 100% seu, focado em duas dores que sei que você tem hoje:
+
+Integração Total: Seus imóveis integrados com o Grupo OLX (Zap, Viva Real e OLX), mantendo a gestão centralizada no seu próprio site.
+
+Inteligência Artificial: Um gerador automático de descrições. Você seleciona as tags (ex: suíte, varanda, nascente) e o sistema cria o texto profissional em segundos.
+
+Você economiza em mensalidades e passa a ter uma vitrine de alta performance que é só sua.
+
+Gostaria de mais detalhes?

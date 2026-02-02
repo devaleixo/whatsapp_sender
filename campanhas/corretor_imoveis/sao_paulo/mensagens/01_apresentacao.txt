@@ -1,13 +1,9 @@
-Olá! Tudo bem?
+Olá, [Nome]! Tudo bem?
 
-Sou desenvolvedor especializado em *sites e automações* para empresas.
+Estava revisando os detalhes da sua plataforma e decidi incluir duas funcionalidades que vão te economizar horas de trabalho e aumentar muito seu alcance:
 
-Vi que a *{nome}* pode se beneficiar de uma presença digital mais profissional.
+Gerador de Descrições com IA: O sistema agora cria textos profissionais e persuasivos para seus imóveis automaticamente. Você seleciona as tags (ex: suíte, churrasqueira, vista livre) e a inteligência artificial gera o anúncio completo em segundos.
 
-Posso ajudar com:
-✅ Sites modernos e responsivos
-✅ Sistemas de agendamento online
-✅ Automação de WhatsApp
-✅ Aparecer no topo do Google
+Hub de Integração (Grupo OLX): Sua plataforma terá integração para exportar seus imóveis para o Zap, Viva Real e OLX. Você cadastra em um único lugar e replica para os grandes portais, mantendo a gestão centralizada no seu site.
 
-Gostaria de saber mais? Me responda aqui!
+O objetivo é que você tenha a tecnologia do ZapImóveis, mas focada 100% na sua marca. Você pode ver mais sobre meu padrão de engenharia aqui: www.devaleixo.com

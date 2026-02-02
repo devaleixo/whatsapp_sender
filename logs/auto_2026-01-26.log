@@ -1,0 +1,64 @@
+[2026-01-26 13:39:04] ==========================================
+[2026-01-26 13:39:04] 🚀 Iniciando envio automático diário
+[2026-01-26 13:39:04]    Total: 20 mensagens
+[2026-01-26 13:39:04]    → Follow-up (48h): até 10
+[2026-01-26 13:39:04]    → Apresentação: até 10
+[2026-01-26 13:39:04] ==========================================
+[2026-01-26 13:39:04] 
+[2026-01-26 13:39:04] 📊 Batch diário:
+[2026-01-26 13:39:04]    🔄 Follow-up (48h): 0
+[2026-01-26 13:39:04]    🆕 Novos contatos: 12
+[2026-01-26 13:39:04]    📱 Total: 12
+[2026-01-26 13:39:04] 
+[2026-01-26 13:39:04] 📤 Iniciando envio...
+  🆕 Enviando para 99501-3797 (55995013797)...
+     ❌ Erro: {'error': True, 'status': 400, 'message': '{"status":400,"error":"Bad Request","response":{"message":[{"exists":false,"jid":"55995013797@s.whatsapp.net","number":"55995013797"}]}}'}
+  🆕 Enviando para (11) 97675-6087 (5511976756087)...
+     ❌ Erro: {'error': True, 'status': 400, 'message': '{"status":400,"error":"Bad Request","response":{"message":[{"exists":false,"jid":"5511976756087@s.whatsapp.net","number":"5511976756087"}]}}'}
+  🆕 Enviando para (61) 99847-1001 (5561998471001)...
+     ❌ Erro: {'error': True, 'status': 400, 'message': '{"status":400,"error":"Bad Request","response":{"message":[{"exists":false,"jid":"556198471001@s.whatsapp.net","number":"5561998471001"}]}}'}
+  🆕 Enviando para (21) 2533-4327 (552125334327)...
+     ❌ Erro: {'error': True, 'status': 400, 'message': '{"status":400,"error":"Bad Request","response":{"message":[{"exists":false,"jid":"552125334327@s.whatsapp.net","number":"552125334327"}]}}'}
+  🆕 Enviando para (21) 99966-3222 (5521999663222)...
+     ✓ Enviado!
+  🆕 Enviando para (21) 2220-1221 (552122201221)...
+     ❌ Erro: {'error': True, 'status': 400, 'message': '{"status":400,"error":"Bad Request","response":{"message":[{"exists":false,"jid":"552122201221@s.whatsapp.net","number":"552122201221"}]}}'}
+  🆕 Enviando para (21) 2533-1930 (552125331930)...
+     ❌ Erro: {'error': True, 'status': 400, 'message': '{"status":400,"error":"Bad Request","response":{"message":[{"exists":false,"jid":"552125331930@s.whatsapp.net","number":"552125331930"}]}}'}
+  🆕 Enviando para (21) 99533-1362 (5521995331362)...
+     ✓ Enviado!
+  🆕 Enviando para (81) 98869-0800 (5581988690800)...
+     ✓ Enviado!
+  🆕 Enviando para (81) 98200-6185 (5581982006185)...
+     ✓ Enviado!
+  🆕 Enviando para (85) 3226-1520 (558532261520)...
+     ❌ Erro: {'error': True, 'status': 400, 'message': '{"status":400,"error":"Bad Request","response":{"message":[{"exists":false,"jid":"558532261520@s.whatsapp.net","number":"558532261520"}]}}'}
+  🆕 Enviando para (81) 98191-7878 (5581981917878)...
+     ✓ Enviado!
+
+✅ Enviados: 5 | ❌ Falhas: 7
+[2026-01-26 13:52:08] 
+[2026-01-26 13:52:08] ==========================================
+[2026-01-26 13:52:08] ✅ Envio diário concluído!
+[2026-01-26 13:52:08] ==========================================
+[2026-01-26 19:20:57] ==========================================
+[2026-01-26 19:20:57] 🚀 Iniciando envio automático diário
+[2026-01-26 19:20:57]    Total: 1 mensagens
+[2026-01-26 19:20:57]    → Follow-up (48h): até 0
+[2026-01-26 19:20:57]    → Apresentação: até 1
+[2026-01-26 19:20:57] ==========================================
+[2026-01-26 19:20:58] 
+[2026-01-26 19:20:58] 📊 Batch diário:
+[2026-01-26 19:20:58]    🔄 Follow-up (48h): 0
+[2026-01-26 19:20:58]    🆕 Novos contatos: 1
+[2026-01-26 19:20:58]    📱 Total: 1
+[2026-01-26 19:20:58] 
+[2026-01-26 19:20:58] 📤 Iniciando envio...
+  🆕 Enviando para 99501-3797 (55995013797)...
+     ❌ Erro: {'error': True, 'status': 500, 'message': '{"status":500,"error":"Internal Server Error","response":{"message":"Connection Closed"}}'}
+
+✅ Enviados: 0 | ❌ Falhas: 1
+[2026-01-26 19:22:03] 
+[2026-01-26 19:22:03] ==========================================
+[2026-01-26 19:22:03] ✅ Envio diário concluído!
+[2026-01-26 19:22:03] ==========================================

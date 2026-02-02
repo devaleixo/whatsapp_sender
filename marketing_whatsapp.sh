@@ -474,7 +474,8 @@ for row in ws.iter_rows(min_row=2, values_only=True):
     if nome and telefone and str(telefone) != 'N/A':
         telefone_str = str(telefone).strip()
         # Checa: não enviado + não bloqueado + precisa de site
-        if telefone_str not in enviados and telefone_str not in blocklist and needs_professional_site(website):
+        # REMOVIDO: Filtro de website profissional - envia para todos
+        if telefone_str not in enviados and telefone_str not in blocklist:
             pendentes.append(row)
 
 # Pega os primeiros 20
@@ -557,7 +558,7 @@ except:
     echo -e "${CYAN}📤 Iniciando envio...${NC}"
     
     cd "$SCRIPT_DIR"
-    python3 whatsapp_sender.py "$batch_xlsx" "$mensagem" -y
+    python3 whatsapp_sender.py "$batch_xlsx" "$mensagem"
     
     # Atualiza log de enviados COM TIMESTAMP (para remarketing)
     python3 << EOF
@@ -1013,7 +1014,7 @@ Posso esclarecer alguma dúvida? 😊"
     echo -e "${CYAN}📤 Enviando follow-up...${NC}"
     
     cd "$SCRIPT_DIR"
-    python3 whatsapp_sender.py "$batch_xlsx" "$mensagem_followup" -y
+    python3 whatsapp_sender.py "$batch_xlsx" "$mensagem_followup"
     
     # Atualiza log incrementando o número da mensagem
     python3 << EOF

@@ -8,6 +8,8 @@ set -e
 
 # Diretórios
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/venv/bin/activate"
+
 CAMPANHAS_DIR="$SCRIPT_DIR/campanhas"
 LOG_DIR="$SCRIPT_DIR/logs"
 BLOCKLIST_FILE="$CAMPANHAS_DIR/blocklist.log"
@@ -142,7 +144,7 @@ for row in ws.iter_rows(min_row=2, values_only=True):
     
     if nome and telefone and str(telefone) != 'N/A':
         telefone_str = str(telefone).strip()
-        if telefone_str not in enviados and telefone_str not in blocklist and needs_professional_site(website):
+        if telefone_str not in enviados and telefone_str not in blocklist:
             pendentes.append(row)
 
 # Pega os primeiros N
@@ -199,7 +201,7 @@ except:
     # Envia mensagens
     log "📤 Iniciando envio..."
     cd "$SCRIPT_DIR"
-    python3 whatsapp_sender.py "$batch_xlsx" "$mensagem" -y >> "$LOG_FILE" 2>&1
+    python3 -u whatsapp_sender.py "$batch_xlsx" "$mensagem" -y >> "$LOG_FILE" 2>&1
     
     # Atualiza log de enviados
     python3 << EOF
@@ -338,9 +340,7 @@ for tipo_dir in glob.glob(f"{campanhas_dir}/*/"):
                 if telefone_str in blocklist:
                     continue
                 
-                # Ignora sem site profissional
-                if not needs_professional_site(website):
-                    continue
+                # REMOVIDO: Filtro de website profissional - envia para todos
                 
                 # Verifica se é follow-up ou novo
                 if telefone_str in enviados_info:
@@ -452,7 +452,7 @@ except:
     log ""
     log "📤 Iniciando envio..."
     
-    python3 << EOF
+    python3 -u << EOF >> "$LOG_FILE" 2>&1
 from openpyxl import load_workbook
 from datetime import datetime
 import sys
@@ -490,12 +490,13 @@ for row in ws.iter_rows(min_row=2, values_only=True):
         
         # Emoji de status
         emoji = "🔄" if tipo == 'followup' else "🆕"
-        print(f"  {emoji} Enviando para {telefone}...")
+        formatted_num = api._format_phone(str(telefone))
+        print(f"  {emoji} Enviando para {telefone} ({formatted_num})...")
         
-        result = api.send_text_with_typing('marketing_sender', str(telefone), mensagem, typing_delay=5.0)
+        result = api.send_text_with_typing('business_sender', str(telefone), mensagem, typing_delay=5.0)
         
         if result.get('error'):
-            print(f"     ❌ Erro: {result.get('message', 'Desconhecido')[:50]}")
+            print(f"     ❌ Erro: {result}")
             falha += 1
         else:
             print(f"     ✓ Enviado!")

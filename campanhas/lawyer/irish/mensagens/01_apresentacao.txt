@@ -1,13 +1,9 @@
-Olá! Tudo bem?
+Hi {nome} 👋 Hope you're having a productive week!
 
-Sou desenvolvedor especializado em *sites e automações* para empresas.
+I noticed many Irish law firms lose potential clients due to slow websites 📉.
 
-Vi que a *{nome}* pode se beneficiar de uma presença digital mais profissional.
+I'm a Software Engineer (ex-Samsung/Bayer) 💻 offering a high-performance, compliant landing page structure for solicitors ⚖️.
 
-Posso ajudar com:
-✅ Sites modernos e responsivos
-✅ Sistemas de agendamento online
-✅ Automação de WhatsApp
-✅ Aparecer no topo do Google
+🚀 Special Launch Offer: Complete setup for just €99.
 
-Gostaria de saber mais? Me responda aqui!
+Open to a quick chat to improve your conversion rate? ☕
