@@ -2,39 +2,62 @@ services:
   evolution-api:
     image: atendai/evolution-api:v1.8.0
     container_name: evolution_api
-    restart: always
+    restart: no
     ports:
       - "8080:8080"
     volumes:
       - evolution_data:/evolution/instances
     environment:
-      # Configurações básicas
       - SERVER_URL=http://localhost:8080
       - AUTHENTICATION_TYPE=apikey
       - AUTHENTICATION_API_KEY=whatsapp_sender_secret_key_2024
       - AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES=true
-      
-      # Logs
       - LOG_LEVEL=WARN
       - LOG_COLOR=true
-      
-      # Webhook (opcional - para receber mensagens)
-      - WEBHOOK_GLOBAL_ENABLED=false
-      
-      # QR Code
+      - WEBHOOK_GLOBAL_ENABLED=true
+      - WEBHOOK_GLOBAL_URL=http://backend:8000/webhook/incoming
+      - WEBHOOK_EVENTS_MESSAGES_UPSERT=true
+      - WEBHOOK_EVENTS_MESSAGES_UPDATE=true
+      - WEBHOOK_EVENTS_CONNECTION_UPDATE=true
       - QRCODE_LIMIT=6
       - QRCODE_COLOR=#000000
-      
-      # Instâncias
       - DEL_INSTANCE=false
       - CONFIG_SESSION_PHONE_CLIENT=Evolution API
       - CONFIG_SESSION_PHONE_NAME=Chrome
-      
-      # Store - salva localmente (não precisa de banco)
       - STORE_MESSAGES=true
       - STORE_MESSAGE_UP=true
       - STORE_CONTACTS=true
       - STORE_CHATS=true
+
+  backend:
+    build: ./backend
+    container_name: wa_backend
+    restart: "no"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/data:/app/data
+    environment:
+      - TZ=America/Sao_Paulo
+      - DB_PATH=/app/data/app.db
+      - EVOLUTION_URL=http://evolution-api:8080
+      - EVOLUTION_API_KEY=whatsapp_sender_secret_key_2024
+      - INSTANCE_NAME=business_sender
+      - ALERT_PHONE=5561993226767
+      - FRONTEND_URL=http://localhost:5173
+      - BOT_WINDOW_START=8
+      - BOT_WINDOW_END=18
+    depends_on:
+      - evolution-api
+
+  frontend:
+    build: ./frontend
+    container_name: wa_frontend
+    restart: "no"
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
 
 volumes:
   evolution_data:
