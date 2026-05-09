@@ -67,8 +67,12 @@ def _format_message(template_body: str, contact: Contact) -> str:
         .replace("{nome}", contact.name or "")
         .replace("{telefone}", contact.e164_phone or "")
         .replace("{endereco}", contact.address or "")
+        .replace("{bairro}", contact.neighborhood or "")
         .replace("{avaliacao}", contact.rating or "")
+        .replace("{qtd_avaliacoes}", contact.rating_count or "")
         .replace("{website}", contact.website or "")
+        .replace("{tipo}", contact.business_type or "")
+        .replace("{status_negocio}", contact.business_status or "")
     )
 
 

@@ -2,7 +2,7 @@ services:
   evolution-api:
     image: atendai/evolution-api:v1.8.0
     container_name: evolution_api
-    restart: no
+    restart: always
     ports:
       - "8080:8080"
     volumes:
@@ -32,7 +32,7 @@ services:
   backend:
     build: ./backend
     container_name: wa_backend
-    restart: "no"
+    restart: always
     ports:
       - "8000:8000"
     volumes:
@@ -44,7 +44,7 @@ services:
       - EVOLUTION_API_KEY=whatsapp_sender_secret_key_2024
       - INSTANCE_NAME=business_sender
       - ALERT_PHONE=5561993226767
-      - FRONTEND_URL=http://localhost:5173
+      - FRONTEND_URL=http://localhost:5174
       - BOT_WINDOW_START=8
       - BOT_WINDOW_END=18
     depends_on:
@@ -53,9 +53,9 @@ services:
   frontend:
     build: ./frontend
     container_name: wa_frontend
-    restart: "no"
+    restart: always
     ports:
-      - "5173:80"
+      - "5174:80"
     depends_on:
       - backend
 

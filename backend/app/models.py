@@ -91,8 +91,13 @@ class Contact(Base):
     phone: Mapped[str] = mapped_column(String(64), nullable=False)
     e164_phone: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     address: Mapped[Optional[str]] = mapped_column(Text)
+    neighborhood: Mapped[Optional[str]] = mapped_column(String(128))
     rating: Mapped[Optional[str]] = mapped_column(String(16))
+    rating_count: Mapped[Optional[str]] = mapped_column(String(32))
     website: Mapped[Optional[str]] = mapped_column(String(512))
+    business_type: Mapped[Optional[str]] = mapped_column(String(128))
+    business_status: Mapped[Optional[str]] = mapped_column(String(32))
+    place_id: Mapped[Optional[str]] = mapped_column(String(256), index=True)
     has_whatsapp: Mapped[str] = mapped_column(String(16), default="unknown", nullable=False)  # unknown|yes|no
     source: Mapped[Optional[str]] = mapped_column(String(128))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow, nullable=False)

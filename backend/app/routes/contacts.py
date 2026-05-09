@@ -71,12 +71,37 @@ async def import_xlsx(
         ).all()
     )
 
+    header_row = next(ws.iter_rows(min_row=1, max_row=1, values_only=True), None)
+    if header_row is None:
+        return ImportResult(imported=0, skipped=0, invalid=0)
+
+    # normalize header names: lowercase + strip accents for flexible matching
+    import unicodedata
+
+    def _norm(s: str) -> str:
+        s = unicodedata.normalize("NFD", str(s).lower().strip())
+        return "".join(c for c in s if unicodedata.category(c) != "Mn")
+
+    col = {_norm(h): i for i, h in enumerate(header_row) if h is not None}
+
+    def _get(row, *keys):
+        for k in keys:
+            idx = col.get(_norm(k))
+            if idx is not None and idx < len(row):
+                return row[idx]
+        return None
+
     for row in ws.iter_rows(min_row=2, values_only=True):
-        name = row[0] if len(row) > 0 else None
-        phone = row[1] if len(row) > 1 else None
-        address = row[2] if len(row) > 2 else None
-        rating = row[3] if len(row) > 3 else None
-        website = row[4] if len(row) > 4 else None
+        name = _get(row, "Nome", "Name")
+        phone = _get(row, "Telefone", "Phone")
+        address = _get(row, "Endereco", "Endereço", "Address")
+        neighborhood = _get(row, "Bairro", "Neighborhood")
+        rating = _get(row, "Avaliacao", "Avaliação", "Rating")
+        rating_count = _get(row, "Qtd_Avaliacoes", "Qtd Avaliacoes", "Rating Count")
+        website = _get(row, "Website")
+        business_type = _get(row, "Tipo", "Type")
+        business_status = _get(row, "Status")
+        place_id_raw = _get(row, "Place_ID", "Place ID")
 
         if not name or not phone or str(phone) == "N/A":
             invalid += 1
@@ -89,15 +114,22 @@ async def import_xlsx(
             skipped += 1
             continue
 
+        place_id = str(place_id_raw) if place_id_raw else None
+
         db.add(Contact(
             campaign_id=campaign_id,
             name=str(name),
             phone=str(phone),
             e164_phone=e164,
             address=str(address) if address else None,
+            neighborhood=str(neighborhood) if neighborhood else None,
             rating=str(rating) if rating else None,
+            rating_count=str(rating_count) if rating_count else None,
             website=str(website) if website else None,
-            source="xlsx",
+            business_type=str(business_type) if business_type else None,
+            business_status=str(business_status) if business_status else None,
+            place_id=place_id,
+            source=place_id or "xlsx",
         ))
         existing.add(e164)
         imported += 1

@@ -90,23 +90,12 @@ async def status(request: Request, db: Session = Depends(get_db)):
     return _handle_status_update(db, data)
 
 
-def _handle_upsert(db: Session, data: dict) -> dict:
-    key = data.get("key") or {}
-    if not isinstance(key, dict):
-        return {"ok": False, "reason": "no_key"}
-    if key.get("fromMe"):
-        return {"ok": True, "ignored": "fromMe"}
-
-    raw_jid = key.get("remoteJid")
+def _get_or_create_contact_and_conv(db: Session, raw_jid: str, push_name: str | None) -> tuple:
+    is_lid = _is_lid(raw_jid)
     phone = _extract_phone(raw_jid)
     if not phone:
-        return {"ok": True, "ignored": "no_phone"}
-
-    is_lid = _is_lid(raw_jid)
+        return None, None, None
     e164 = phone if is_lid else (to_e164(phone) or phone)
-    text = _extract_text(data) or ""
-    push_name = data.get("pushName") or data.get("pushname")
-    incoming_msg_id = key.get("id")
 
     contact = (
         db.query(Contact)
@@ -126,23 +115,55 @@ def _handle_upsert(db: Session, data: dict) -> dict:
         )
         db.add(contact)
         db.flush()
-        log.info("created orphan contact %s for incoming from %s", contact.id, raw_jid)
+        log.info("created orphan contact %s for %s", contact.id, raw_jid)
 
-    conv = (
-        db.query(Conversation).filter(Conversation.contact_id == contact.id).first()
-    )
+    conv = db.query(Conversation).filter(Conversation.contact_id == contact.id).first()
     if not conv:
         conv = Conversation(contact_id=contact.id, state="bot")
         db.add(conv)
         db.flush()
 
+    return contact, conv, e164
+
+
+def _handle_upsert(db: Session, data: dict) -> dict:
+    key = data.get("key") or {}
+    if not isinstance(key, dict):
+        return {"ok": False, "reason": "no_key"}
+
+    from_me = bool(key.get("fromMe"))
+    raw_jid = key.get("remoteJid")
+    msg_id = key.get("id")
+    text = _extract_text(data) or ""
+    push_name = data.get("pushName") or data.get("pushname")
+
+    contact, conv, e164 = _get_or_create_contact_and_conv(db, raw_jid, push_name)
+    if not contact:
+        return {"ok": True, "ignored": "no_phone"}
+
+    if from_me:
+        # fromMe = message sent from the business number (manually or via API/worker)
+        is_bot = bool(msg_id and db.query(Send).filter(Send.evolution_msg_id == msg_id).first())
+        conv.last_outgoing_at = datetime.now()
+        db.add(Message(
+            conversation_id=conv.id,
+            direction="out",
+            body=text,
+            from_bot=is_bot,
+            evolution_msg_id=msg_id,
+            status="sent",
+        ))
+        db.commit()
+        return {"ok": True}
+
+    # Incoming message
     conv.last_incoming_at = datetime.now()
     db.add(Message(
         conversation_id=conv.id,
         direction="in",
         body=text,
         from_bot=False,
-        evolution_msg_id=incoming_msg_id,
+        evolution_msg_id=msg_id,
         status="delivered",
     ))
     db.commit()

@@ -105,8 +105,13 @@ class ContactIn(BaseModel):
     name: str
     phone: str
     address: Optional[str] = None
+    neighborhood: Optional[str] = None
     rating: Optional[str] = None
+    rating_count: Optional[str] = None
     website: Optional[str] = None
+    business_type: Optional[str] = None
+    business_status: Optional[str] = None
+    place_id: Optional[str] = None
     source: Optional[str] = None
 
 
@@ -117,8 +122,13 @@ class ContactOut(ORMBase):
     phone: str
     e164_phone: str
     address: Optional[str]
+    neighborhood: Optional[str]
     rating: Optional[str]
+    rating_count: Optional[str]
     website: Optional[str]
+    business_type: Optional[str]
+    business_status: Optional[str]
+    place_id: Optional[str]
     has_whatsapp: str
     source: Optional[str]
     created_at: datetime
