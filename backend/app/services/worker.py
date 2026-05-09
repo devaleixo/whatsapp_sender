@@ -331,11 +331,12 @@ def _process_item(db: Session, item: SendQueue) -> None:
         return
 
     body = _format_message(template.body, contact)
+    send_to = contact.phone if contact.phone and contact.phone.endswith("@lid") else contact.e164_phone
     typing = _get_typing_delay(db)
     if typing > 0:
-        result = client.send_text_with_typing(settings.instance_name, contact.e164_phone, body, typing_delay=typing)
+        result = client.send_text_with_typing(settings.instance_name, send_to, body, typing_delay=typing)
     else:
-        result = client.send_text(settings.instance_name, contact.e164_phone, body)
+        result = client.send_text(settings.instance_name, send_to, body)
 
     if result.get("error"):
         db.add(Send(

@@ -125,12 +125,14 @@ def send_manual(conversation_id: int, payload: ManualMessageIn, db: Session = De
         raise HTTPException(404, "contact gone")
 
     client = get_client()
+    # LID contacts must use full JID (e.g. "123@lid"), not stripped numeric ID
+    send_to = contact.phone if contact.phone and contact.phone.endswith("@lid") else contact.e164_phone
     app_cfg = db.query(AppSettings).first()
     typing = float(app_cfg.typing_delay_seconds) if app_cfg else 0.0
     if typing > 0:
-        result = client.send_text_with_typing(settings.instance_name, contact.e164_phone, payload.body, typing_delay=typing)
+        result = client.send_text_with_typing(settings.instance_name, send_to, payload.body, typing_delay=typing)
     else:
-        result = client.send_text(settings.instance_name, contact.e164_phone, payload.body)
+        result = client.send_text(settings.instance_name, send_to, payload.body)
     msg_id = None
     key = result.get("key") or (result.get("data", {}) or {}).get("key")
     if isinstance(key, dict):
